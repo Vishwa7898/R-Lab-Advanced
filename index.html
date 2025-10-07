@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IT2110 - R Language Timed Quiz</title>
+<title>IT2110 - R Language Final Quiz</title>
 <style>
     body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans Sinhala', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -21,7 +21,7 @@
         border-radius: 10px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         width: 100%;
-        max-width: 800px;
+        max-width: 850px;
         overflow: hidden;
     }
     #header {
@@ -87,9 +87,7 @@
         color: #721c24;
     }
     #feedback {
-        padding: 20px;
-        margin: 0 25px;
-        border-radius: 5px;
+        padding: 20px 25px 5px 25px;
         display: none; /* Initially hidden */
     }
     #feedback.show {
@@ -100,6 +98,44 @@
         margin-top: 10px;
         color: #555;
         line-height: 1.6;
+    }
+    #navigation-palette {
+        padding: 20px 25px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+        gap: 8px;
+        border-top: 1px solid #e9ecef;
+        max-height: 160px;
+        overflow-y: auto;
+    }
+    .nav-item {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 40px;
+        height: 40px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        background-color: #f8f9fa; /* Unanswered */
+        color: #333;
+    }
+    .nav-item.current {
+        background-color: #007bff; /* Current */
+        color: white;
+        border-color: #0056b3;
+    }
+    .nav-item.answered-correct {
+        background-color: #28a745; /* Correct */
+        color: white;
+        border-color: #1e7e34;
+    }
+    .nav-item.answered-incorrect {
+        background-color: #dc3545; /* Incorrect */
+        color: white;
+        border-color: #bd2130;
     }
     #footer {
         padding: 20px;
@@ -112,6 +148,7 @@
     #progress-text {
         font-size: 0.9em;
         color: #6c757d;
+        font-weight: bold;
     }
     .nav-btn {
         color: white;
@@ -139,7 +176,7 @@
 
 <div id="quiz-container">
     <div id="header">
-        <h2>IT2110 R Lab Test - Timed Quiz</h2>
+        <h2>IT2110 R Lab Test - Final Quiz</h2>
         <div id="timer">00:00</div>
     </div>
     <div id="question-area">
@@ -149,6 +186,7 @@
     <div id="feedback">
         <p id="explanation-text"></p>
     </div>
+    <div id="navigation-palette"></div>
     <div id="footer">
         <button id="back-btn" class="nav-btn">Back</button>
         <span id="progress-text"></span>
@@ -271,13 +309,13 @@ const quizData = [
         question: "19. In R, how would you calculate the range (the difference between the maximum and minimum values) of a numeric vector `x`?",
         options: ["range(x)", "max(x) - min(x)", "r(x)", "diff(x)"],
         correct: 1,
-        explanation: "පැහැදිලි කිරීම: `range(x)` ශ්‍රිතය මගින් ලැබෙන්නේ අවම සහ උපරිම අගයන් දෙකයි. එම අගයන් දෙක අතර වෙනස (පරාසය) සෙවීමට `max(x) - min(x)` ලෙස ලිවිය යුතුය."
+        explanation: "පැහැදිලි කිරීම: `range(x)` ශ්‍රිතය මගින් ලැබෙන්නේ අවම සහ උපරිම אගයන් දෙකයි. එම අගයන් දෙක අතර වෙනස (පරාසය) සෙවීමට `max(x) - min(x)` ලෙස ලිවිය යුතුය."
     },
     {
         question: "20. A key difference between the outputs of `fivenum(x)` and `summary(x)` is that `summary()` also provides the:",
         options: ["Median", "Minimum value", "Mean", "Maximum value"],
         correct: 2,
-        explanation: "පැහැදිලි කිරීම: `fivenum()` මගින් අවම, පහළ චතුර්ථකය, මධ්‍යස්ථය, ඉහළ චතුර්ථකය සහ උපරිමය යන අගයන් 5 ලබාදෙයි. `summary()` මගින් ඊට අමතරව මධ්‍යන්‍යය (Mean) ද ලබාදෙයි."
+        explanation: "පැහැදිලි කිරීම: `fivenum()` මගින් අවම, පහළ චතුර්ථකය, මධ්‍යස්ථය, ඉහළ චතුර්ථකය සහ උපරිමය යන אගයන් 5 ලබාදෙයි. `summary()` මගින් ඊට අමතරව මධ්‍යන්‍යය (Mean) ද ලබාදෙයි."
     },
     {
         question: "21. What does the variance of a dataset measure?",
@@ -409,7 +447,7 @@ const quizData = [
         question: "42. What is the output of `quantile(x, probs = c(0, 0.25, 0.5, 0.75, 1))` for a numeric vector `x`?",
         options: ["The mean and standard deviation.", "A five-number summary (minimum, 1st quartile, median, 3rd quartile, maximum).", "The frequency of each unique value in `x`.", "The correlation matrix of `x`."],
         correct: 1,
-        explanation: "පැහැදිලි කිරීම: `quantile()` ශ්‍රිතයට `probs` තර්කය මගින් අවශ්‍ය ප්‍රතිශතා ලක්ෂ්‍ය ලබාදිය හැක. 0, 0.25, 0.5, 0.75, 1 යනු පිළිවෙලින් අවම අගය, පළමු චතුර්ථකය, මධ්‍යස්ථය, තුන්වන චතුර්ථකය සහ උපරිම අගයයි. මෙය `summary()` ශ්‍රිතයෙන් ලැබෙන ප්‍රතිඵලයට සමාන වේ."
+        explanation: "පැහැදිලි කිරීම: `quantile()` ශ්‍රිතයට `probs` තර්කය මගින් අවශ්‍ය ප්‍රතිශතා ලක්ෂ්‍ය ලබාදිය හැක. 0, 0.25, 0.5, 0.75, 1 යනු පිළිවෙලින් අවම אගය, පළමු චතුර්ථකය, මධ්‍යස්ථය, තුන්වන චතුර්ථකය සහ උපරිම אගයයි. මෙය `summary()` ශ්‍රිතයෙන් ලැබෙන ප්‍රතිඵලයට සමාන වේ."
     },
     {
         question: "43. Which function is used to add a legend to a plot in R, to help identify different lines or points?",
@@ -427,7 +465,7 @@ const quizData = [
         question: "45. You have a vector of categorical data `fruits <- c(\"Apple\", \"Banana\", \"Apple\", \"Orange\")`. How do you create a pie chart showing the frequency of each fruit?",
         options: ["pie(fruits)", "pie(table(fruits))", "pie(count(fruits))", "pie(freq(fruits))"],
         correct: 1,
-        explanation: "පැහැදිලි කිරීම: `pie()` ශ්‍රිතයට සංඛ්‍යාත්මක අගයන් අවශ්‍ය වේ. `table(fruits)` මගින් පළමුව එක් එක් පළතුරු වර්ගය කොපමණ වාරයක් ඇත්දැයි ගණනය කර සංඛ්‍යාත වගුවක් (frequency table) සාදයි. ඉන්පසු එම වගුව `pie()` ශ්‍රිතයට ලබාදී ප්‍රස්තාරය නිර්මාණය කරයි."
+        explanation: "පැහැදිලි කිරීම: `pie()` ශ්‍රිතයට සංඛ්‍යාත්මක אගයන් අවශ්‍ය වේ. `table(fruits)` මගින් පළමුව එක් එක් පළතුරු වර්ගය කොපමණ වාරයක් ඇත්දැයි ගණනය කර සංඛ්‍යාත වගුවක් (frequency table) සාදයි. ඉන්පසු එම වගුව `pie()` ශ්‍රිතයට ලබාදී ප්‍රස්තාරය නිර්මාණය කරයි."
     },
     {
         question: "46. What does the thick black line in the middle of a standard boxplot represent?",
@@ -478,7 +516,7 @@ const quizData = [
         explanation: "පැහැදිලි කිරීම: `cor()` ශ්‍රිතයට සංඛ්‍යාත්මක තීරු පමණක් ඇති දත්ත රාමුවක් ලබාදුන් විට, එය එක් එක් තීරු යුගලය අතර සහසම්බන්ධතාව ගණනය කර, ප්‍රතිඵලය න්‍යාසයක් (matrix) ලෙස ලබාදෙයි."
     },
     {
-        question: "54. When running a two-sample t-test, what is the null hypothesis that is typically being tested?",
+        question: "54. When running a a two-sample t-test, what is the null hypothesis that is typically being tested?",
         options: ["That the means of the two samples are different.", "That there is no difference between the means of the two populations from which the samples were drawn.", "That the standard deviations of the two samples are equal.", "That the samples come from a normal distribution."],
         correct: 1,
         explanation: "පැහැදිලි කිරීම: නියැදි දෙකක t-පරීක්ෂාවක මූලික ශුන්‍ය උපකල්පිතය (null hypothesis) වන්නේ, එම නියැදි ලබාගත් ගහනයන් දෙකේ මධ්‍යන්‍යයන් අතර වෙනසක් නොමැති බවයි (H0: μ1 = μ2)."
@@ -517,19 +555,19 @@ const quizData = [
         question: "60. Which function removes rows with `NA` values from a data frame?",
         options: ["na.remove()", "na.delete()", "na.omit()", "clean.na()"],
         correct: 2,
-        explanation: "පැහැදිලි කිරීම: `na.omit()` ශ්‍රිතය මඟින් දත්ත රාමුවක ඕනෑම තීරුවක `NA` අගයක් ඇති සම්පූර්ණ පේළියම ඉවත් කර නව දත්ත රාමුවක් ලබා දෙයි."
+        explanation: "පැහැදිලි කිරීම: `na.omit()` ශ්‍රිතය මඟින් දත්ත රාමුවක ඕනෑම තීරුවක `NA` אගයක් ඇති සම්පූර්ණ පේළියම ඉවත් කර නව දත්ත රාමුවක් ලබා දෙයි."
     },
     {
         question: "61. What does the `scale()` function in R do?",
         options: ["It changes the plot scale.", "It calculates the standard deviation.", "It standardizes the data (centers to mean 0 and scales to standard deviation 1).", "It finds the range of the data."],
         correct: 2,
-        explanation: "පැහැදිලි කිරීම: `scale()` ශ්‍රිතය මඟින් දත්ත ප්‍රමිතිකරණය (standardization) කරයි. එනම්, එක් එක් අගයෙන් මධ්‍යන්‍යය අඩු කර, සම්මත අපගමනයෙන් බෙදයි. මෙය z-scores ගණනය කිරීමට සමාන වේ."
+        explanation: "පැහැදිලි කිරීම: `scale()` ශ්‍රිතය මඟින් දත්ත ප්‍රමිතිකරණය (standardization) කරයි. එනම්, එක් එක් אගයෙන් මධ්‍යන්‍යය අඩු කර, සම්මත අපගමනයෙන් බෙදයි. මෙය z-scores ගණනය කිරීමට සමාන වේ."
     },
     {
         question: "62. If the mean of a dataset is significantly greater than its median, the distribution is likely:",
         options: ["Symmetrical", "Left-skewed (Negatively skewed)", "Right-skewed (Positively skewed)", "Uniform"],
         correct: 2,
-        explanation: "පැහැදිලි කිරීම: ව්‍යාප්තියක් දකුණට විෂම (right-skewed) වන විට, ඉහළ අගයන් කිහිපයක් මධ්‍යන්‍යය ඉහළට ඇද දමයි, නමුත් මධ්‍යස්ථය එතරම් වෙනස් නොවේ. එනිසා, `Mean > Median` වේ."
+        explanation: "පැහැදිලි කිරීම: ව්‍යාප්තියක් දකුණට විෂම (right-skewed) වන විට, ඉහළ אගයන් කිහිපයක් මධ්‍යන්‍යය ඉහළට ඇද දමයි, නමුත් මධ්‍යස්ථය එතරම් වෙනස් නොවේ. එනිසා, `Mean > Median` වේ."
     },
     {
         question: "63. What is the result of `ceiling(5.2)`?",
@@ -553,7 +591,7 @@ const quizData = [
         question: "66. What is the purpose of `set.seed(123)`?",
         options: ["To speed up calculations.", "To set a starting point for random number generation, making the results reproducible.", "To change the color theme of plots.", "To plant a virtual tree in R."],
         correct: 1,
-        explanation: "පැහැදිලි කිරීම: අහඹු සංඛ්‍යා ජනනය (random number generation) කිරීමේදී, `set.seed()` මඟින් එම ක්‍රියාවලිය සඳහා ආරම්භක ලක්ෂ්‍යයක් ලබා දෙයි. එකම seed අගය භාවිතා කරන ඕනෑම කෙනෙකුට එකම අහඹු සංඛ්‍යා අනුපිළිවෙලක් ලැබේ. මෙය ප්‍රතිඵල නැවත තහවුරු කිරීමට (reproducibility) ඉතා වැදගත් වේ."
+        explanation: "පැහැදිලි කිරීම: අහඹු සංඛ්‍යා ජනනය (random number generation) කිරීමේදී, `set.seed()` මඟින් එම ක්‍රියාවලිය සඳහා ආරම්භක ලක්ෂ්‍යයක් ලබා දෙයි. එකම seed אගය භාවිතා කරන ඕනෑම කෙනෙකුට එකම අහඹු සංඛ්‍යා අනුපිළිවෙලක් ලැබේ. මෙය ප්‍රතිඵල නැවත තහවුරු කිරීමට (reproducibility) ඉතා වැදගත් වේ."
     },
     {
         question: "67. To find the probability P(X > k) for a discrete distribution like Binomial, which command is most efficient?",
@@ -565,7 +603,7 @@ const quizData = [
         question: "68. What does the `predict()` function do when used with a linear model object (`lm`)?",
         options: ["It predicts the R-squared value.", "It predicts the next most likely variable to add to the model.", "It predicts the dependent variable (y) for new values of the independent variable (x).", "It predicts the p-value of the model."],
         correct: 2,
-        explanation: "පැහැදිලි කිරීම: පුහුණු කළ රේඛීය ආකෘතියක් (`lm` object) සහ ස්වාධීන විචල්‍යයේ නව දත්ත (`newdata`) ලබා දුන් විට, `predict()` ශ්‍රිතය මඟින් පරායත්ත විචල්‍යයේ අගයන් මොනවාදැයි අනාවැකි පළ කරයි."
+        explanation: "පැහැදිලි කිරීම: පුහුණු කළ රේඛීය ආකෘතියක් (`lm` object) සහ ස්වාධීන විචල්‍යයේ නව දත්ත (`newdata`) ලබා දුන් විට, `predict()` ශ්‍රිතය මඟින් පරායත්ත විචල්‍යයේ אගයන් මොනවාදැයි අනාවැකි පළ කරයි."
     },
     {
         question: "69. In `summary(lm(y ~ x))`, what does 'R-squared' represent?",
@@ -637,7 +675,7 @@ const quizData = [
         question: "80. What does the `qpois(p, lambda)` function return?",
         options: ["The probability P(X <= q).", "The value `x` such that P(X <= x) = p.", "A random number from the Poisson distribution.", "The probability density P(X = x)."],
         correct: 1,
-        explanation: "පැහැදිලි කිරීම: 'q' উপসর্গය සහිත ශ්‍රිත (quantile functions) මඟින්, දී ඇති සමුච්චිත සම්භාවිතාවකට (`p`) අනුරූප වන විචල්‍යයේ අගය (`x`) ලබා දෙයි."
+        explanation: "පැහැදිලි කිරීම: 'q' উপসর্গය සහිත ශ්‍රිත (quantile functions) මඟින්, දී ඇති සමුච්චිත සම්භාවිතාවකට (`p`) අනුරූප වන විචල්‍යයේ אගය (`x`) ලබා දෙයි."
     },
     {
         question: "81. In a multiple linear regression `lm(y ~ x1 + x2)`, what is the null hypothesis for the coefficient of `x1`?",
@@ -673,7 +711,7 @@ const quizData = [
         question: "86. What is the result of `is.na(c(1, NA, 3))`?",
         options: ["FALSE TRUE FALSE", "NA", "An error", "FALSE"],
         correct: 0,
-        explanation: "පැහැදිලි කිරීම: `is.na()` ශ්‍රිතය දෛශිකයක් මත ක්‍රියාත්මක කළ විට, එය එක් එක් මූලද්‍රව්‍යය `NA` ද නැද්ද යන්න පරීක්ෂා කර, `TRUE`/`FALSE` අගයන් සහිත තාර්කික දෛශිකයක් ලබා දෙයි."
+        explanation: "පැහැදිලි කිරීම: `is.na()` ශ්‍රිතය දෛශිකයක් මත ක්‍රියාත්මක කළ විට, එය එක් එක් මූලද්‍රව්‍යය `NA` ද නැද්ද යන්න පරීක්ෂා කර, `TRUE`/`FALSE` אගයන් සහිත තාර්කික දෛශිකයක් ලබා දෙයි."
     },
     {
         question: "87. Which function would you use to convert a numeric variable `age` in a data frame to a categorical variable (factor)?",
@@ -691,7 +729,7 @@ const quizData = [
         question: "89. In a boxplot, a point plotted far above or below the whiskers is considered an:",
         options: ["Mean value", "Median value", "Error", "Outlier"],
         correct: 3,
-        explanation: "පැහැදිලි කිරීම: පෙට්ටි සටහනක 'whiskers' වලින් පිටත, එනම් IQR අගය මෙන් 1.5 ගුණයකට වඩා දුරින් පිහිටි දත්ත ලක්ෂ්‍යයන් බාහිර අගයන් (outliers) ලෙස සලකනු ලැබේ."
+        explanation: "පැහැදිලි කිරීම: පෙට්ටි සටහනක 'whiskers' වලින් පිටත, එනම් IQR אගය මෙන් 1.5 ගුණයකට වඩා දුරින් පිහිටි දත්ත ලක්ෂ්‍යයන් බාහිර אගයන් (outliers) ලෙස සලකනු ලැබේ."
     },
     {
         question: "90. How can you save the current R plot to a PDF file named 'myplot.pdf'?",
@@ -715,19 +753,19 @@ const quizData = [
         question: "93. What does a 'residual' represent in linear regression?",
         options: ["The difference between the observed y value and the predicted y value (ŷ).", "The slope of the regression line.", "The R-squared value.", "The error in the x variable."],
         correct: 0,
-        explanation: "පැහැදිලි කිරීම: අවශේෂ (residual) යනු නිරීක්ෂණය කරන ලද සැබෑ අගය සහ ආකෘතිය මඟින් අනාවැකි පළ කළ අගය අතර ඇති සිරස් දුරයි. එය ආකෘතියේ දෝෂය (error) මනියි."
+        explanation: "පැහැදිලි කිරීම: අවශේෂ (residual) යනු නිරීක්ෂණය කරන ලද සැබෑ אගය සහ ආකෘතිය මඟින් අනාවැකි පළ කළ אගය අතර ඇති සිරස් දුරයි. එය ආකෘතියේ දෝෂය (error) මනියි."
     },
     {
         question: "94. What is the purpose of the `conf.level` argument in `t.test()`?",
         options: ["To set the p-value for significance.", "To set the confidence level for the confidence interval of the mean.", "To set the number of confidence intervals to compute.", "To configure the plot level."],
         correct: 1,
-        explanation: "පැහැදිලි කිරීම: `conf.level` තර්කය මඟින් මධ්‍යන්‍යයේ වෙනස සඳහා ගණනය කරන විශ්වාස පරතරයේ මට්ටම නියම කරයි. default අගය 0.95 (95% confidence) වේ."
+        explanation: "පැහැදිලි කිරීම: `conf.level` තර්කය මඟින් මධ්‍යන්‍යයේ වෙනස සඳහා ගණනය කරන විශ්වාස පරතරයේ මට්ටම නියම කරයි. default אගය 0.95 (95% confidence) වේ."
     },
     {
         question: "95. Which function is used to create a sequence of numbers? For example, to create `1, 3, 5, 7, 9`.",
         options: ["`c(1,3,5,7,9)`", "`seq(from = 1, to = 9, by = 2)`", "`1:9, by=2`", "Both a and b"],
         correct: 3,
-        explanation: "පැහැදිලි කිරීම: `c()` මඟින් අගයන් සෘජුවම ලබා දී දෛශිකයක් සෑදිය හැක. `seq()` ශ්‍රිතය මඟින් ආරම්භක අගයක්, අවසාන අගයක්, සහ වර්ධකයක් (`by`) ලබා දී අනුක්‍රමයක් නිර්මාණය කළ හැක. දෙකම වලංගු ක්‍රම වේ."
+        explanation: "පැහැදිලි කිරීම: `c()` මඟින් אගයන් සෘජුවම ලබා දී දෛශිකයක් සෑදිය හැක. `seq()` ශ්‍රිතය මඟින් ආරම්භක אගයක්, අවසාන אගයක්, සහ වර්ධකයක් (`by`) ලබා දී අනුක්‍රමයක් නිර්මාණය කළ හැක. දෙකම වලංගු ක්‍රම වේ."
     },
     {
         question: "96. If `x <- c('a','b','c')` what is `x[c(1,3)]`?",
@@ -751,7 +789,7 @@ const quizData = [
         question: "99. What does the `abline(h=0)` command do on a plot?",
         options: ["Adds a horizontal line at y=0.", "Adds a vertical line at x=0.", "Adds a best-fit regression line.", "Highlights the point (0,0)."],
         correct: 0,
-        explanation: "පැහැදිලි කිරීම: `abline()` ශ්‍රිතයට `h` තර්කය ලබා දුන් විට, එය එම y අගය හරහා යන තිරස් (horizontal) රේඛාවක් අඳියි. `v` තර්කය මඟින් සිරස් (vertical) රේඛාවක් අඳියි."
+        explanation: "පැහැදිලි කිරීම: `abline()` ශ්‍රිතයට `h` තර්කය ලබා දුන් විට, එය එම y אගය හරහා යන තිරස් (horizontal) රේඛාවක් අඳියි. `v` තර්කය මඟින් සිරස් (vertical) රේඛාවක් අඳියි."
     },
     {
         question: "100. If `rnorm(1)` generates one number from a standard normal distribution, what would you expect the `mean` of `rnorm(1000000)` to be very close to?",
@@ -763,7 +801,7 @@ const quizData = [
         question: "101. What is the most likely reason for a `t.test()` to return a p-value of 1?",
         options: ["The two groups are perfectly identical.", "The groups are extremely different.", "The data contains `NA` values.", "The sample size is too large."],
         correct: 0,
-        explanation: "පැහැදිලි කිරීම: p-අගය 1ක් ලැබීමෙන් ඇඟවෙන්නේ නියැදි මධ්‍යන්‍යයන් අතර වෙනසක් නොමැති බවත්, දත්තවල කිසිදු විචලනයක් නොමැති බවත් ය. මෙය සිදුවිය හැක්කේ නියැදි දෙකම සෑම අතින්ම සමාන වන විටයි."
+        explanation: "පැහැදිලි කිරීම: p-אගය 1ක් ලැබීමෙන් ඇඟවෙන්නේ නියැදි මධ්‍යන්‍යයන් අතර වෙනසක් නොමැති බවත්, දත්තවල කිසිදු විචලනයක් නොමැති බවත් ය. මෙය සිදුවිය හැක්කේ නියැදි දෙකම සෑම අතින්ම සමාන වන විටයි."
     },
     {
         question: "102. What happens if you try to add a character string to a numeric vector in R?",
@@ -796,11 +834,13 @@ const backBtn = document.getElementById('back-btn');
 const progressTextEl = document.getElementById('progress-text');
 const quizContainer = document.getElementById('quiz-container');
 const timerEl = document.getElementById('timer');
+const navPaletteEl = document.getElementById('navigation-palette');
 
 // You can change the quiz time here (in minutes)
 const quizTimeInMinutes = 60;
 let timeRemaining = quizTimeInMinutes * 60;
 let timerInterval;
+let quizFinished = false;
 
 let currentQuestionIndex = 0;
 let userAnswers = new Array(quizData.length).fill(null);
@@ -810,6 +850,7 @@ function startTimer() {
 }
 
 function updateTimer() {
+    if (quizFinished) return;
     timeRemaining--;
     const minutes = Math.floor(timeRemaining / 60);
     let seconds = timeRemaining % 60;
@@ -822,6 +863,48 @@ function updateTimer() {
     if (timeRemaining <= 0) {
         clearInterval(timerInterval);
         showResults(true); // true indicates time is up
+    }
+}
+
+function renderNavigationPalette() {
+    navPaletteEl.innerHTML = '';
+    for (let i = 0; i < quizData.length; i++) {
+        const navItem = document.createElement('div');
+        navItem.innerText = i + 1;
+        navItem.classList.add('nav-item');
+        navItem.dataset.index = i;
+        navItem.addEventListener('click', (e) => {
+            jumpToQuestion(parseInt(e.target.dataset.index));
+        });
+        navPaletteEl.appendChild(navItem);
+    }
+    updateNavigationPalette();
+}
+
+function updateNavigationPalette() {
+    const navItems = navPaletteEl.children;
+    for (let i = 0; i < navItems.length; i++) {
+        const item = navItems[i];
+        item.classList.remove('current', 'answered-correct', 'answered-incorrect');
+
+        if (userAnswers[i] !== null) {
+            if (userAnswers[i] === quizData[i].correct) {
+                item.classList.add('answered-correct');
+            } else {
+                item.classList.add('answered-incorrect');
+            }
+        }
+        
+        if (i === currentQuestionIndex) {
+            item.classList.add('current');
+        }
+    }
+}
+
+function jumpToQuestion(index) {
+    if (index >= 0 && index < quizData.length) {
+        currentQuestionIndex = index;
+        loadQuestion();
     }
 }
 
@@ -868,6 +951,7 @@ function loadQuestion() {
     }
     
     progressTextEl.innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+    updateNavigationPalette();
 }
 
 function selectAnswer(e) {
@@ -894,6 +978,7 @@ function selectAnswer(e) {
 
     showFeedback();
     nextBtn.disabled = false;
+    updateNavigationPalette();
 }
 
 function showFeedback() {
@@ -903,7 +988,8 @@ function showFeedback() {
 }
 
 function showResults(timeIsUp = false) {
-    clearInterval(timerInterval); // Stop timer if quiz is finished
+    quizFinished = true;
+    clearInterval(timerInterval);
     
     let finalScore = 0;
     for (let i = 0; i < quizData.length; i++) {
@@ -946,6 +1032,7 @@ backBtn.addEventListener('click', () => {
 });
 
 // Initial load
+renderNavigationPalette();
 loadQuestion();
 startTimer();
 
