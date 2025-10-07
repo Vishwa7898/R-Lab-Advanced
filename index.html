@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT2110 - R Language Timed Quiz</title>
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans Sinhala', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        background-color: #f0f2f5;
+        color: #333;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+    }
+    #quiz-container {
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        width: 100%;
+        max-width: 800px;
+        overflow: hidden;
+    }
+    #header {
+        background: linear-gradient(135deg, #4A90E2, #50E3C2);
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+    h2 {
+        margin: 0;
+        font-size: 1.5em;
+    }
+    #timer {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #fff;
+        background-color: rgba(0,0,0,0.2);
+        padding: 5px 15px;
+        border-radius: 5px;
+        margin-top: 15px;
+        display: inline-block;
+        letter-spacing: 2px;
+    }
+    #question-area {
+        padding: 25px;
+    }
+    #question-text {
+        font-size: 1.2em;
+        font-weight: 500;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+    #options-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .option {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: background-color 0.2s, border-color 0.2s;
+    }
+    .option.no-hover {
+        cursor: default;
+    }
+    .option:not(.no-hover):hover {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+    }
+    .option.correct {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+        font-weight: bold;
+    }
+    .option.incorrect {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+    #feedback {
+        padding: 20px;
+        margin: 0 25px;
+        border-radius: 5px;
+        display: none; /* Initially hidden */
+    }
+    #feedback.show {
+        display: block;
+    }
+    #explanation-text {
+        font-style: italic;
+        margin-top: 10px;
+        color: #555;
+        line-height: 1.6;
+    }
+    #footer {
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
+    #progress-text {
+        font-size: 0.9em;
+        color: #6c757d;
+    }
+    .nav-btn {
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: background-color 0.2s;
+    }
+    #next-btn {
+        background-color: #28a745;
+    }
+    #back-btn {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    .nav-btn:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
+    }
+</style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div id="header">
+        <h2>IT2110 R Lab Test - Timed Quiz</h2>
+        <div id="timer">00:00</div>
+    </div>
+    <div id="question-area">
+        <p id="question-text"></p>
+        <ul id="options-list"></ul>
+    </div>
+    <div id="feedback">
+        <p id="explanation-text"></p>
+    </div>
+    <div id="footer">
+        <button id="back-btn" class="nav-btn">Back</button>
+        <span id="progress-text"></span>
+        <button id="next-btn" class="nav-btn">Next</button>
+    </div>
+</div>
+
+<script>
+const quizData = [
+    // All 104 questions from previous turn go here...
+    {
+        question: "1. In R, what is the correct command to select the column named 'Height' from a data frame named `my_data`?",
+        options: ["my_data['Height']", "my_data.Height", "my_data$Height", "my_data{'Height'}"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: Data Frame එකක තීරුවක් (column) තෝරාගැනීමට '$' සලකුණ භාවිත කරයි."
+    },
+    {
+        question: "2. Which is the correct function to import a CSV file named `info.csv` into the R environment?",
+        options: ["import.csv(\"info.csv\")", "read.csv(\"info.csv\")", "load.csv(\"info.csv\")", "open.csv(\"info.csv\")"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: R වල CSV ගොනු කියවීම සඳහා `read.csv()` ශ්‍රිතය භාවිතා කරයි."
+    },
+    {
+        question: "3. What type of data structure is created by the R command `x <- c(5, 10, 15, 20)`?",
+        options: ["A List", "A Vector", "A Matrix", "A Data Frame"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `c()` ශ්‍රිතය භාවිතා කරන්නේ දෛශික (vectors) නිර්මාණය කිරීමටයි."
+    },
+    {
+        question: "4. Which pair of R functions is used to calculate the mean and standard deviation of a dataset?",
+        options: ["avg() and stdev()", "mean() and sd()", "average() and deviation()", "mean() and st.dev()"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: මධ්‍යන්‍යය සඳහා `mean()` ද, සම්මත අපගමනය සඳහා `sd()` ද R හි නිවැරදි ශ්‍රිත වේ."
+    },
+    {
+        question: "5. When the `summary(dataset)` command is executed, which of the following values is NOT included in the output?",
+        options: ["Mean", "1st Quartile", "Mode", "Median"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `summary()` ශ්‍රිතය මගින් මාතය (වැඩිම වාර ගණනක් ඇති අගය) ගණනය කර පෙන්වන්නේ නැත."
+    },
+    {
+        question: "6. What is the R function used to calculate the Interquartile Range (IQR) of a dataset?",
+        options: ["iqr.range()", "interquartile()", "IQR()", "quantile.range()"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: IQR ගණනය කිරීමට `IQR()` ශ්‍රිතය කෙලින්ම භාවිතා කළ හැක."
+    },
+    {
+        question: "7. Which R function is used to create a Boxplot, which is useful for visualizing the distribution and identifying outliers in data?",
+        options: ["hist()", "plot()", "barplot()", "boxplot()"],
+        correct: 3,
+        explanation: "පැහැදිලි කිරීම: Boxplot මගින් දත්තවල චතුර්ථක, මධ්‍යස්ථය සහ බාහිර අගයන් පැහැදිලිව පෙන්වයි."
+    },
+    {
+        question: "8. What is the most suitable chart type to represent a frequency distribution?",
+        options: ["Histogram", "Scatter Plot", "Pie Chart", "Line Chart"],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: හිස්ටෝග්‍රෑමයක් මගින් දත්ත කාණ්ඩයක් විවිධ පන්ති ප්‍රාන්තර වලට බෙදා ඒවායේ සංඛ්‍යාතය පෙන්වයි."
+    },
+    {
+        question: "9. What type of plot is created by the command `plot(x, y)`?",
+        options: ["Bar plot", "Boxplot", "Scatter Plot", "Histogram"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `plot()` ශ්‍රිතය විචල්‍ය දෙකක් ලබාදුන් විට විසිරුම් සටහනක් නිර්මාණය කරයි."
+    },
+    {
+        question: "10. For a Normal Distribution, which R function is used to find the cumulative probability of a value less than or equal to `x`, i.e., P(X ≤ x)?",
+        options: ["dnorm()", "pnorm()", "qnorm()", "rnorm()"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: සම්භාවිතා ව්‍යාප්තියක සමුච්චිත සම්භාවිතාව (cumulative probability) සඳහා 'p' উপসর্গය (prefix) භාවිතා කරයි."
+    },
+    {
+        question: "11. For a Binomial Distribution, which R function is used to find the probability of getting an exact number of successes (`k`), i.e., P(X = k)?",
+        options: ["dbinom()", "pbinom()", "qbinom()", "rbinom()"],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: නිශ්චිත අගයක සම්භාවිතාව (probability density/mass) සෙවීමට 'd' উপসর্গය භාවිතා කරයි."
+    },
+    {
+        question: "12. According to the Central Limit Theorem, if the population mean is μ, what should be the mean of the sampling distribution of the sample means (μx̄)?",
+        options: ["Greater than μ", "Less than μ", "Equal to μ", "Equal to μ / n"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: මධ්‍ය සීමා ප්‍රමේයේ මූලිකම සංකල්පයකි. μx̄ = μ වේ."
+    },
+    {
+        question: "13. According to the Central Limit Theorem, if the population variance is σ², what should be the variance of the sampling distribution of the sample means (σ²x̄)?",
+        options: ["σ²", "σ² / n", "σ / n", "σ² × n"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: නියැදි මධ්‍යන්‍යයන්ගේ විචලතාව, ගහනයේ විචලතාව නියැදි ප්‍රමාණයෙන් බෙදූ විට ලැබෙන අගයට සමාන වේ."
+    },
+    {
+        question: "14. What is the correct R command to draw a random sample of 10 items from a vector named `population_data` with replacement?",
+        options: ["random(population_data, 10, replace = TRUE)", "choose(population_data, 10, replace = TRUE)", "sample(population_data, 10, replace = TRUE)", "select(population_data, 10, replace = TRUE)"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: නියැදි ලබාගැනීම සඳහා `sample()` ශ්‍රිතය භාවිතා කරන අතර, ප්‍රතිස්ථාපනය සහිතව සඳහා `replace = TRUE` යන තර්කය (argument) යොදයි."
+    },
+    {
+        question: "15. Which command creates a 2x3 matrix from the vector `c(1,2,3,4,5,6)` where elements are filled row-by-row?",
+        options: ["matrix(c(1,2,3,4,5,6), nrow=2, ncol=3)", "matrix(c(1,2,3,4,5,6), 2, 3, byrow=FALSE)", "matrix(c(1,2,3,4,5,6), nrow=2, byrow=TRUE)", "matrix(c(1,2,3,4,5,6), 2, 3, fill=row)"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `byrow=TRUE` යන තර්කය (argument) මගින් දත්ත පේළි දිගේ (row-wise) පිරවීම සිදු කරයි. මෙය නොදැක්වුවහොත්, දත්ත තීරු දිගේ (column-wise) පිරවීම සිදු වේ."
+    },
+    {
+        question: "16. What is the output of the `levels()` function on a factor created using `factor(c(\"A\", \"B\", \"A\", \"C\", \"B\"))`?",
+        options: ["\"A\" \"B\" \"A\" \"C\" \"B\"", "\"A\" \"B\" \"C\"", "1 2 1 3 2", "NULL"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `factor` එකක `levels()` ශ්‍රිතය මගින් එහි ඇති අනන්‍ය (unique) වර්ගීකරණ මට්ටම් (categories) පෙන්වයි."
+    },
+    {
+        question: "17. How do you correctly access the second element of a list named `my_list`?",
+        options: ["my_list(2)", "my_list[2]", "my_list[[2]]", "my_list$2"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: ලැයිස්තුවක (list) මූලද්‍රව්‍යයක (element) අගයම ලබාගැනීම සඳහා ද්විත්ව හතරැස් වරහන් `[[...]]` භාවිතා කරයි. තනි වරහන් මගින් ලැබෙන්නේ එම මූලද්‍රව්‍යය අඩංගු උප-ලැයිස්තුවකි (sub-list)."
+    },
+    {
+        question: "18. Which command is most suitable for importing a space-separated text file named `data.txt` with a header row?",
+        options: ["read.csv(\"data.txt\")", "read.table(\"data.txt\", header=TRUE)", "import.txt(\"data.txt\")", "load.table(\"data.txt\", has.header=TRUE)"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `read.table()` ශ්‍රිතය විවිධ වෙන්කිරීම් (delimiters) සහිත ගොනු සඳහා භාවිතා කරන අතර, `header=TRUE` මගින් පළමු පේළිය තීරු නාම ලෙස සලකයි."
+    },
+    {
+        question: "19. In R, how would you calculate the range (the difference between the maximum and minimum values) of a numeric vector `x`?",
+        options: ["range(x)", "max(x) - min(x)", "r(x)", "diff(x)"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `range(x)` ශ්‍රිතය මගින් ලැබෙන්නේ අවම සහ උපරිම අගයන් දෙකයි. එම අගයන් දෙක අතර වෙනස (පරාසය) සෙවීමට `max(x) - min(x)` ලෙස ලිවිය යුතුය."
+    },
+    {
+        question: "20. A key difference between the outputs of `fivenum(x)` and `summary(x)` is that `summary()` also provides the:",
+        options: ["Median", "Minimum value", "Mean", "Maximum value"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `fivenum()` මගින් අවම, පහළ චතුර්ථකය, මධ්‍යස්ථය, ඉහළ චතුර්ථකය සහ උපරිමය යන අගයන් 5 ලබාදෙයි. `summary()` මගින් ඊට අමතරව මධ්‍යන්‍යය (Mean) ද ලබාදෙයි."
+    },
+    {
+        question: "21. What does the variance of a dataset measure?",
+        options: ["The most frequently occurring value.", "The middle value of the dataset.", "The average of the squared differences from the Mean.", "The difference between the highest and lowest values."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: විචලතාව (Variance) යනු දත්ත ලක්ෂ්‍යයන් මධ්‍යන්‍යයෙන් කොපමණ දුරට විසිරී ඇත්දැයි මනින මිම්මකි. එය මධ්‍යන්‍යයෙන් ඇති අපගමනයන්ගේ වර්ගවල මධ්‍යන්‍යය ලෙස ගණනය කරයි."
+    },
+    {
+        question: "22. Which argument is used to add a main title to a plot created using functions like `plot()` or `hist()`?",
+        options: ["title = \"My Title\"", "label = \"My Title\"", "header = \"My Title\"", "main = \"My Title\""],
+        correct: 3,
+        explanation: "පැහැදිලි කිරීම: R ප්‍රස්තාරවල ප්‍රධාන මාතෘකාව (main title) එක් කිරීමට `main` යන තර්කය භාවිතා කරයි."
+    },
+    {
+        question: "23. How do you create a horizontal bar chart using the `barplot()` function?",
+        options: ["By using the argument `horizontal=TRUE`", "By using the argument `orientation=\"horizontal\"`", "By using the argument `horiz=TRUE`", "By switching the `x` and `y` arguments."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `barplot()` ශ්‍රිතය මගින් තිරස් (horizontal) තීරු ප්‍රස්තාරයක් නිර්මාණය කිරීමට `horiz=TRUE` ලෙස යෙදිය යුතුය."
+    },
+    {
+        question: "24. Which argument is used to change the color of the bars in a histogram or a bar chart?",
+        options: ["color", "fill", "col", "style"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: R ප්‍රස්තාරවල වර්ණය වෙනස් කිරීම සඳහා පොදුවේ භාවිතා කරන තර්කය `col` වේ (උදා: `col=\"blue\"`)."
+    },
+    {
+        question: "25. How would you calculate the number of combinations for choosing 2 items from a set of 5 (denoted as 5C2) in R?",
+        options: ["combinations(5, 2)", "nCr(5, 2)", "perm(5, 2)", "choose(5, 2)"],
+        correct: 3,
+        explanation: "පැහැදිලි කිරීම: සංයෝජන (Combinations) ගණනය කිරීම සඳහා R හි ඇති නිල ශ්‍රිතය `choose()` වේ."
+    },
+    {
+        question: "26. Which function calculates the probability of observing exactly 3 events (P(X=3)) in a Poisson distribution with a mean rate (lambda) of 4?",
+        options: ["ppois(3, lambda=4)", "dpois(3, lambda=4)", "qpois(3, lambda=4)", "rpois(3, lambda=4)"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: පොයිසොන් ව්‍යාප්තියක නිශ්චිත සිදුවීම් සංඛ්‍යාවක සම්භාවිතාව සෙවීමට 'd' উপসর্গය සහිත `dpois()` ශ්‍රිතය භාවිතා කරයි."
+    },
+    {
+        question: "27. Which R command finds the value from a standard normal distribution (z-score) that has 95% of the cumulative probability to its left?",
+        options: ["pnorm(0.95)", "dnorm(0.95)", "qnorm(0.95)", "rnorm(0.95)"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: දී ඇති සමුච්චිත සම්භාවිතාවකට අදාළ අගය (quantile) සෙවීම සඳහා 'q' উপসর্গය සහිත `qnorm()` ශ්‍රිතය භාවිතා කරයි."
+    },
+    {
+        question: "28. Which command generates 10 random numbers from a normal distribution with a mean of 50 and a standard deviation of 10?",
+        options: ["rnorm(10, mean=50, sd=10)", "qnorm(10, mean=50, sd=10)", "dnorm(10, mean=50, sd=10)", "pnorm(10, mean=50, sd=10)"],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: ව්‍යාප්තියකින් අහඹු සංඛ්‍යා (random numbers) ජනනය කිරීමට 'r' উপসর্গය සහිත `rnorm()` ශ්‍රිතය භාවිතා කරයි."
+    },
+    {
+        question: "29. A calculated correlation coefficient of -0.9 between two variables indicates:",
+        options: ["A strong positive linear relationship.", "A weak negative linear relationship.", "Almost no linear relationship.", "A strong negative linear relationship."],
+        correct: 3,
+        explanation: "පැහැදිලි කිරීම: සහසම්බන්ධතා සංගුණකය -1 ට ආසන්න වන විට ප්‍රබල සෘණ රේඛීය සම්බන්ධතාවක් ද, +1 ට ආසන්න වන විට ප්‍රබල ධන රේඛීය සම්බන්ධතාවක් ද, 0 ට ආසන්න වන විට දුබල රේඛීය සම්බන්ධතාවක් ද පෙන්වයි."
+    },
+    {
+        question: "30. After creating a linear model `model <- lm(y ~ x)`, which command adds the resulting regression line to a scatter plot of y vs x?",
+        options: ["lines(model)", "abline(model)", "plot(model)", "regr.line(model)"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `lm()` මගින් සෑදූ රේඛීය ආකෘතියේ ප්‍රතිගාමී රේඛාව (regression line) විසිරුම් සටහනකට එක් කිරීමට `abline()` ශ්‍රිතය භාවිතා කරයි."
+    },
+    {
+        question: "31. How can you extract the intercept and slope coefficients from a linear model object named `model`?",
+        options: ["values(model)", "results(model)", "coef(model)", "params(model)"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: රේඛීය ආකෘතියක සංගුණක (coefficients), එනම් අන්තඃඛණ්ඩය (intercept) සහ අනුක්‍රමණය (slope) ලබාගැනීමට `coef()` ශ්‍රිතය භාවිතා කරයි."
+    },
+    {
+        question: "32. What is the primary R function for performing a one-sample or a two-sample t-test?",
+        options: ["t.test()", "test.t()", "hypothesis.t()", "mean.test()"],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: මධ්‍යන්‍යයන් පිළිබඳ උපකල්පිත පරීක්ෂා (hypothesis tests) සඳහා භාවිතා කරන ප්‍රධාන ශ්‍රිතය `t.test()` වේ."
+    },
+    {
+        question: "33. How do you use the `sample()` function to ensure that an item from a vector is not chosen more than once (sampling without replacement)?",
+        options: ["By setting `unique=TRUE`", "By setting `resample=FALSE`", "By setting `replace=FALSE`", "This is the default behavior, so no argument is needed."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `sample()` ශ්‍රිතයේදී `replace=FALSE` ලෙස යෙදූ විට, තෝරාගත් මූලද්‍රව්‍යයක් නැවත තෝරාගැනීම සිදු නොවේ. මෙය `sample()` ශ්‍රිතයේ default හැසිරීම වුවද, එය නිශ්චිතවම දක්වන තර්කය මෙයයි."
+    },
+    {
+        question: "34. Conceptually, what does a small p-value (e.g., < 0.05) typically indicate in a hypothesis test?",
+        options: ["The null hypothesis is likely true.", "There is strong evidence against the null hypothesis.", "The alternative hypothesis is false.", "The result is not statistically significant."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: p-අගය යනු ශුන්‍ය උපකල්පිතය (null hypothesis) සත්‍ය යැයි උපකල්පනය කළ විට, නිරීක්ෂණය කරන ලද ප්‍රතිඵලය හෝ ඊට වඩා ආන්තික ප්‍රතිඵලයක් ලැබීමේ සම්භාවිතාවයි. කුඩා p-අගයක් යනු එවැනි ප්‍රතිඵලයක් ලැබීම ඉතා අසම්භාව්‍ය බවයි, එබැවින් ශුන්‍ය උපකල්පිතය ප්‍රතික්ෂේප කිරීමට එය ප්‍රබල සාක්ෂියක් වේ."
+    },
+    {
+        question: "35. How would you access the element in the 3rd row and 2nd column of a data frame named `df`?",
+        options: ["df[[3]][[2]]", "df[3, 2]", "df$2[3]", "df(3, 2)"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: දත්ත රාමුවක හෝ න්‍යාසයක නිශ්චිත කොටුවක් (cell) තෝරාගැනීමට `[row, column]` යන ආකෘතිය භාවිතා කරයි."
+    },
+    {
+        question: "36. You have a numeric vector `ages <- c(25, 30, 22)`. Which command correctly assigns the names \"John\", \"Mary\", \"Tom\" to the elements of this vector?",
+        options: ["label(ages) <- c(\"John\", \"Mary\", \"Tom\")", "ages <- c(\"John\"=25, \"Mary\"=30, \"Tom\"=22)", "names(ages) <- c(\"John\", \"Mary\", \"Tom\")", "colnames(ages) <- c(\"John\", \"Mary\", \"Tom\")"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: දෛශිකයක (vector) මූලද්‍රව්‍යයන්ට නම් ලබාදීම සඳහා `names()` ශ්‍රිතය භාවිතා කරයි."
+    },
+    {
+        question: "37. If `my_vector <- c(1, 2, 3)`, which of the following commands will result in `my_vector` becoming `c(1, 2, 3, 4, 5)`?",
+        options: ["my_vector + c(4, 5)", "append(my_vector, c(4, 5))", "my_vector[4:5] <- c(4, 5)", "Both b and c are correct"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `append()` ශ්‍රිතය මගින් දෛශිකයකට නව මූලද්‍රව්‍ය එකතු කර නව දෛශිකයක් නිර්මාණය කරයි. `my_vector[4:5] <- c(4, 5)` මගින් ද දැනට පවතින දෛශිකය වෙනස් කළ හැක, නමුත් `append()` යනු වඩාත් පොදු භාවිතයයි. කෙසේ වෙතත්, `append()` මගින් නව දෛශිකයක් නිර්මාණය කරන නිසා, එය `my_vector <- append(my_vector, c(4, 5))` ලෙස පැවතිය යුතුය. නමුත් ලබා දී ඇති පිළිතුරු අතරින් වඩාත්ම නිවැරදි සංකල්පය `append` වේ."
+    },
+    {
+        question: "38. What is the key difference between a list and a vector in R?",
+        options: ["Vectors can only store numbers, while lists can store characters.", "A list can contain elements of different data types, while a vector can only contain elements of the same data type.", "Vectors are one-dimensional, while lists are two-dimensional.", "There is no difference; they are interchangeable."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: මෙය R හි ඇති මූලිකම වෙනසකි. දෛශිකයක (vector) තිබිය හැක්කේ එකම වර්ගයේ දත්ත පමණි (උදා: සියල්ලම සංඛ්‍යා, හෝ සියල්ලම අක්ෂර). ලැයිස්තුවක (list) සංඛ්‍යා, අක්ෂර, දෛශික, සහ වෙනත් ලැයිස්තු වැනි විවිධ වර්ගයේ දත්ත මිශ්‍රව පැවතිය හැක."
+    },
+    {
+        question: "39. If a dataset contains a very large outlier, how will it affect the mean and median?",
+        options: ["Both the mean and median will be significantly affected.", "The median will be significantly affected, but the mean will not.", "The mean will be significantly affected, but the median will not.", "Neither the mean nor the median will be affected."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: මධ්‍යන්‍යය (mean) ගණනය කිරීමේදී සියලුම අගයන් එකතු කරන නිසා, බාහිර අගයකින් (outlier) එය විශාල ලෙස වෙනස් වේ. මධ්‍යස්ථය (median) යනු දත්ත මැද පිහිටි අගය නිසා, බාහිර අගයකින් එයට එතරම් බලපෑමක් සිදු නොවේ. එබැවින් මධ්‍යස්ථය 'robust' මිම්මක් ලෙස හැඳින්වේ."
+    },
+    {
+        question: "40. You have a vector `x <- c(10, 20, NA, 40)`. What will be the output of `mean(x)` and how can you fix it to get a valid result?",
+        options: ["Output is 23.33; no fix is needed.", "Output is an error; it cannot be fixed.", "Output is `NA`; it can be fixed by using `mean(x, na.rm=TRUE)`.", "Output is 0; it can be fixed by using `mean(x, ignore.na=TRUE)`."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: දත්ත කාණ්ඩයක `NA` (Not Available) අගයන් තිබේ නම්, `mean()`, `sd()` වැනි ශ්‍රිතයන්ගේ ප්‍රතිඵලය `NA` වේ. `na.rm=TRUE` (NA remove) යන තර්කය භාවිතා කර `NA` අගයන් නොසලකා හැර ගණනය කිරීම් සිදු කළ හැක."
+    },
+    {
+        question: "41. In R, the `var()` function calculates the sample variance (s²). Conceptually, how does this differ from the population variance (σ²)?",
+        options: ["Sample variance divides by `n`, while population variance divides by `n-1`.", "Sample variance divides by `n-1`, while population variance divides by `n`.", "There is no difference in the calculation.", "Sample variance is always smaller than population variance."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: නියැදි විචලතාව (sample variance) ගණනය කිරීමේදී, වර්ග අපගමනයන්ගේ එකතුව `n-1` න් බෙදයි. ගහනයේ විචලතාව (population variance) ගණනය කිරීමේදී, `N` (ගහනයේ ප්‍රමාණය) න් බෙදයි. `n-1` භාවිතා කරන්නේ ගහනයේ විචලතාව සඳහා අපක්ෂපාතී ඇස්තමේන්තුවක් (unbiased estimate) ලබාගැනීමටයි."
+    },
+    {
+        question: "42. What is the output of `quantile(x, probs = c(0, 0.25, 0.5, 0.75, 1))` for a numeric vector `x`?",
+        options: ["The mean and standard deviation.", "A five-number summary (minimum, 1st quartile, median, 3rd quartile, maximum).", "The frequency of each unique value in `x`.", "The correlation matrix of `x`."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `quantile()` ශ්‍රිතයට `probs` තර්කය මගින් අවශ්‍ය ප්‍රතිශතා ලක්ෂ්‍ය ලබාදිය හැක. 0, 0.25, 0.5, 0.75, 1 යනු පිළිවෙලින් අවම අගය, පළමු චතුර්ථකය, මධ්‍යස්ථය, තුන්වන චතුර්ථකය සහ උපරිම අගයයි. මෙය `summary()` ශ්‍රිතයෙන් ලැබෙන ප්‍රතිඵලයට සමාන වේ."
+    },
+    {
+        question: "43. Which function is used to add a legend to a plot in R, to help identify different lines or points?",
+        options: ["label()", "legend()", "key()", "annotate()"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: ප්‍රස්තාරයකට විස්තරාත්මක යතුරක් (legend) එක් කිරීමට `legend()` ශ්‍රිතය භාවිතා කරයි. එහි පිහිටීම, නම් සහ වර්ණ සඳහන් කළ හැක."
+    },
+    {
+        question: "44. How can you set the limits for the x-axis of a plot to range from 0 to 50?",
+        options: ["xaxis(min=0, max=50)", "x-axis = c(0, 50)", "xlim = c(0, 50)", "xrange = c(0, 50)"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `plot()`, `hist()` වැනි ප්‍රස්තාර ශ්‍රිතවලදී x-අක්ෂයේ සීමා (`limits`) වෙනස් කිරීමට `xlim` තර්කයද, y-අක්ෂයේ සීමා වෙනස් කිරීමට `ylim` තර්කයද භාවිතා කරයි."
+    },
+    {
+        question: "45. You have a vector of categorical data `fruits <- c(\"Apple\", \"Banana\", \"Apple\", \"Orange\")`. How do you create a pie chart showing the frequency of each fruit?",
+        options: ["pie(fruits)", "pie(table(fruits))", "pie(count(fruits))", "pie(freq(fruits))"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `pie()` ශ්‍රිතයට සංඛ්‍යාත්මක අගයන් අවශ්‍ය වේ. `table(fruits)` මගින් පළමුව එක් එක් පළතුරු වර්ගය කොපමණ වාරයක් ඇත්දැයි ගණනය කර සංඛ්‍යාත වගුවක් (frequency table) සාදයි. ඉන්පසු එම වගුව `pie()` ශ්‍රිතයට ලබාදී ප්‍රස්තාරය නිර්මාණය කරයි."
+    },
+    {
+        question: "46. What does the thick black line in the middle of a standard boxplot represent?",
+        options: ["The Mean", "The Mode", "The Median (or 2nd Quartile)", "The Interquartile Range (IQR)"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: පෙට්ටි සටහනක (boxplot) මැද ඇති තද රේඛාවෙන් නිරූපණය වන්නේ දත්ත කාණ්ඩයේ මධ්‍යස්ථයයි (50 වන ප්‍රතිශතකය)."
+    },
+    {
+        question: "47. A coin is flipped 10 times. What is the R command to find the probability of getting AT MOST 2 heads (i.e., P(X ≤ 2))? Assume the probability of heads is 0.5.",
+        options: ["dbinom(2, size=10, prob=0.5)", "pbinom(2, size=10, prob=0.5)", "1 - pbinom(2, size=10, prob=0.5)", "sum(dbinom(0:2, size=10, prob=0.5))"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: P(X ≤ k) වැනි සමුච්චිත සම්භාවිතාවක් (cumulative probability) සෙවීමට `pbinom()` ශ්‍රිතය භාවිතා කරයි. `dbinom(0) + dbinom(1) + dbinom(2)` යන ගණනය කිරීමට මෙය සමාන වේ."
+    },
+    {
+        question: "48. On average, a hospital receives 5 emergency calls per hour. What is the R command to find the probability of receiving MORE THAN 3 calls in an hour?",
+        options: ["ppois(3, lambda=5)", "dpois(3, lambda=5)", "1 - ppois(3, lambda=5)", "1 - dpois(3, lambda=5)"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `ppois(3, lambda=5)` මගින් ලැබෙන්නේ P(X ≤ 3) හි සම්භාවිතාවයි. අපට P(X > 3) අවශ්‍ය නිසා, සම්පූර්ණ සම්භාවිතාව වන 1න් එම අගය අඩු කළ යුතුය."
+    },
+    {
+        question: "49. What is the R command to find the area under the standard normal curve between z = -1.5 and z = 1.5?",
+        options: ["pnorm(1.5) - pnorm(-1.5)", "dnorm(1.5) - dnorm(-1.5)", "qnorm(1.5) + qnorm(-1.5)", "pnorm(1.5 * 2)"],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: P(a < Z < b) සෙවීමට, P(Z < b) - P(Z < a) ලෙස ගණනය කළ යුතුය. `pnorm()` ශ්‍රිතය P(Z < z) ලබාදෙන නිසා, `pnorm(1.5)` මගින් z=1.5 ට අඩු සම්භාවිතාවද, `pnorm(-1.5)` මගින් z=-1.5 ට අඩු සම්භාවිතාවද ලබාගෙන, එම අගයන් දෙකේ වෙනස ගත යුතුය."
+    },
+    {
+        question: "50. What is the correct formula syntax for a simple linear regression model in R using the `lm()` function, where `y` is the dependent variable and `x` is the independent variable?",
+        options: ["lm(y, x)", "lm(x ~ y)", "lm(y ~ x)", "lm(formula = y + x)"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: R හි ආකෘති (models) සඳහා වන සම්මත සූත්‍රය `dependent_variable ~ independent_variable` වේ. මෙහි `~` (tilde) ලකුණ \"is modeled by\" ලෙස අර්ථ දැක්වේ."
+    },
+    {
+        question: "51. In the output of `summary(lm(y ~ x))`, a small p-value (e.g., < 0.05) for the independent variable `x` suggests that:",
+        options: ["The model is a poor fit for the data.", "The independent variable `x` is a statistically significant predictor of `y`.", "The relationship between `x` and `y` is weak.", "The intercept of the model is zero."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: ප්‍රතිගාමී ආකෘතියකදී, ස්වාධීන විචල්‍යයට (independent variable) අදාළ p-අගය කුඩා වීමෙන්, එම විචල්‍යය සහ පරායත්ත විචල්‍යය (dependent variable) අතර ඇති සම්බන්ධය අහම්බෙන් සිදු වූවක් නොවන බවට ප්‍රබල සාක්ෂි සපයයි."
+    },
+    {
+        question: "52. In the `t.test()` function, which argument is used to specify that you are testing if the true mean is *less than* a certain value (a one-sided test)?",
+        options: ["side = \"left\"", "type = \"one.sided\"", "direction = \"less\"", "alternative = \"less\""],
+        correct: 3,
+        explanation: "පැහැදිලි කිරීම: `t.test()` ශ්‍රිතයේදී විකල්ප උපකල්පිතය (alternative hypothesis) සඳහන් කිරීමට `alternative` තර්කය භාවිතා කරයි. අගයන් තුනකි: `\"two.sided\"` (default), `\"less\"`, සහ `\"greater\"`."
+    },
+    {
+        question: "53. If you run the command `cor(my_data)` where `my_data` is a data frame with three numeric columns (V1, V2, V3), what will be the result?",
+        options: ["A single correlation value for the entire data frame.", "A 3x3 correlation matrix, showing the correlation between each pair of columns.", "Three separate correlation values.", "An error, because `cor()` only takes two vectors as input."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `cor()` ශ්‍රිතයට සංඛ්‍යාත්මක තීරු පමණක් ඇති දත්ත රාමුවක් ලබාදුන් විට, එය එක් එක් තීරු යුගලය අතර සහසම්බන්ධතාව ගණනය කර, ප්‍රතිඵලය න්‍යාසයක් (matrix) ලෙස ලබාදෙයි."
+    },
+    {
+        question: "54. When running a two-sample t-test, what is the null hypothesis that is typically being tested?",
+        options: ["That the means of the two samples are different.", "That there is no difference between the means of the two populations from which the samples were drawn.", "That the standard deviations of the two samples are equal.", "That the samples come from a normal distribution."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: නියැදි දෙකක t-පරීක්ෂාවක මූලික ශුන්‍ය උපකල්පිතය (null hypothesis) වන්නේ, එම නියැදි ලබාගත් ගහනයන් දෙකේ මධ්‍යන්‍යයන් අතර වෙනසක් නොමැති බවයි (H0: μ1 = μ2)."
+    },
+    {
+        question: "55. Which function in R is used to get the dimensions (number of rows and columns) of a matrix or data frame?",
+        options: ["length()", "size()", "dim()", "dimensions()"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `dim()` ශ්‍රිතය මඟින් දත්ත රාමුවක හෝ න්‍යාසයක පේළි ගණන සහ තීරු ගණන පිළිවෙලින් දෛශිකයක් ලෙස ලබා දෙයි. (උදා: `c(rows, columns)`)."
+    },
+    {
+        question: "56. What does negative indexing do in R? For example, what is the result of `x[-2]` if `x <- c(10, 20, 30, 40)`?",
+        options: ["It returns the second element, 20.", "It returns an error.", "It returns all elements *except* the second element: 10, 30, 40.", "It returns the second element from the end, 30."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: R වල සෘණ සුචිගත කිරීම (negative indexing) මඟින් එම ස්ථානයේ ඇති මූලද්‍රව්‍යය ඉවත් කර ඉතිරි සියල්ල ලබා දෙයි."
+    },
+    {
+        question: "57. What is the purpose of the `t()` function in R?",
+        options: ["To perform a t-test.", "To get the data type of an object.", "To transpose a matrix or data frame.", "To trim whitespace from a string."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `t()` ශ්‍රිතය න්‍යාසයක හෝ දත්ත රාමුවක පේළි සහ තීරු මාරු කරයි (transpose)."
+    },
+    {
+        question: "58. You have a vector `x <- c(1, 0, 1, 1, 0)`. What is the result of `as.logical(x)`?",
+        options: ["TRUE FALSE TRUE TRUE FALSE", "1 0 1 1 0", "An error", "YES NO YES YES NO"],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: `as.logical()` ශ්‍රිතය මඟින් සංඛ්‍යාත්මක දෛශිකයක් තාර්කික (logical) දෛශිකයක් බවට පරිවර්තනය කරයි. මෙහිදී 0 `FALSE` බවටත්, 0 නොවන ඕනෑම සංඛ්‍යාවක් `TRUE` බවටත් පත් වේ."
+    },
+    {
+        question: "59. How do you select all rows in a data frame `df` where the column `age` is greater than 30?",
+        options: ["df[df$age > 30, ]", "df(df$age > 30)", "subset(df, age < 30)", "df[age > 30]"],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: තාර්කික සුචිගත කිරීම (logical indexing) භාවිතයෙන් මෙය සිදු කළ හැක. `df$age > 30` මඟින් `TRUE`/`FALSE` දෛශිකයක් නිර්මාණය වන අතර, එය පේළි තෝරාගැනීමට යොදා ගනී. කොමාවට (`,`) පසුව කිසිවක් නොදැමීමෙන් සියලුම තීරු තෝරාගන්නා බව సూచిస్తుంది."
+    },
+    {
+        question: "60. Which function removes rows with `NA` values from a data frame?",
+        options: ["na.remove()", "na.delete()", "na.omit()", "clean.na()"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `na.omit()` ශ්‍රිතය මඟින් දත්ත රාමුවක ඕනෑම තීරුවක `NA` අගයක් ඇති සම්පූර්ණ පේළියම ඉවත් කර නව දත්ත රාමුවක් ලබා දෙයි."
+    },
+    {
+        question: "61. What does the `scale()` function in R do?",
+        options: ["It changes the plot scale.", "It calculates the standard deviation.", "It standardizes the data (centers to mean 0 and scales to standard deviation 1).", "It finds the range of the data."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `scale()` ශ්‍රිතය මඟින් දත්ත ප්‍රමිතිකරණය (standardization) කරයි. එනම්, එක් එක් අගයෙන් මධ්‍යන්‍යය අඩු කර, සම්මත අපගමනයෙන් බෙදයි. මෙය z-scores ගණනය කිරීමට සමාන වේ."
+    },
+    {
+        question: "62. If the mean of a dataset is significantly greater than its median, the distribution is likely:",
+        options: ["Symmetrical", "Left-skewed (Negatively skewed)", "Right-skewed (Positively skewed)", "Uniform"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: ව්‍යාප්තියක් දකුණට විෂම (right-skewed) වන විට, ඉහළ අගයන් කිහිපයක් මධ්‍යන්‍යය ඉහළට ඇද දමයි, නමුත් මධ්‍යස්ථය එතරම් වෙනස් නොවේ. එනිසා, `Mean > Median` වේ."
+    },
+    {
+        question: "63. What is the result of `ceiling(5.2)`?",
+        options: ["5", "6", "5.5", "5.0"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `ceiling()` ශ්‍රිතය මඟින් දශම සංඛ්‍යාවක්, එයට සමාන හෝ එයට වඩා වැඩි ආසන්නම පූර්ණ සංඛ්‍යාවට වටයයි."
+    },
+    {
+        question: "64. The function `pairs()` is used for what purpose in R visualization?",
+        options: ["To find pairs of duplicate values.", "To create a paired boxplot.", "To create a scatterplot matrix, showing relationships between all pairs of variables.", "To test for paired data in a t-test."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `pairs()` ශ්‍රිතයට දත්ත රාමුවක් ලබා දුන් විට, එය එක් එක් විචල්‍ය යුගලය සඳහා විසිරුම් සටහනක් (scatterplot) ඇතුළත් න්‍යාසයක් නිර්මාණය කරයි. මෙය විචල්‍ය අතර සම්බන්ධතා ඉක්මනින් දැකගැනීමට උපකාරී වේ."
+    },
+    {
+        question: "65. In the `plot()` function, what does the argument `pch` control?",
+        options: ["The color of the points.", "The size of the points.", "The shape of the plotting points.", "The type of the plot (line, points, etc.)."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `pch` (plotting character) තර්කය මඟින් විසිරුම් සටහනක ලක්ෂ්‍යවල හැඩය (උදා: රවුම්, කොටු, ත්‍රිකෝණ) වෙනස් කිරීමට භාවිතා කරයි. (උදා: `pch = 19` යනු පිරවූ රවුමකි)."
+    },
+    {
+        question: "66. What is the purpose of `set.seed(123)`?",
+        options: ["To speed up calculations.", "To set a starting point for random number generation, making the results reproducible.", "To change the color theme of plots.", "To plant a virtual tree in R."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: අහඹු සංඛ්‍යා ජනනය (random number generation) කිරීමේදී, `set.seed()` මඟින් එම ක්‍රියාවලිය සඳහා ආරම්භක ලක්ෂ්‍යයක් ලබා දෙයි. එකම seed අගය භාවිතා කරන ඕනෑම කෙනෙකුට එකම අහඹු සංඛ්‍යා අනුපිළිවෙලක් ලැබේ. මෙය ප්‍රතිඵල නැවත තහවුරු කිරීමට (reproducibility) ඉතා වැදගත් වේ."
+    },
+    {
+        question: "67. To find the probability P(X > k) for a discrete distribution like Binomial, which command is most efficient?",
+        options: ["1 - dbinom(k, ...)", "pbinom(k, ..., lower.tail = FALSE)", "1 - pbinom(k-1, ...)", "dbinom(k+1, ...)"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `pbinom()` වැනි සම්භාවිතා ශ්‍රිතවල `lower.tail = FALSE` යන තර්කය P(X > k) ගණනය කරයි. `1 - pbinom(k, ...)` මඟින් P(X ≤ k) ගණනය කර 1න් අඩු කරන අතර, එය ද P(X > k) ට සමාන නොවේ (විවික්ත ව්‍යාප්ති සඳහා). `lower.tail = FALSE` යනු වඩාත් නිවැරදි සහ කාර්යක්ෂම ක්‍රමයයි."
+    },
+    {
+        question: "68. What does the `predict()` function do when used with a linear model object (`lm`)?",
+        options: ["It predicts the R-squared value.", "It predicts the next most likely variable to add to the model.", "It predicts the dependent variable (y) for new values of the independent variable (x).", "It predicts the p-value of the model."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: පුහුණු කළ රේඛීය ආකෘතියක් (`lm` object) සහ ස්වාධීන විචල්‍යයේ නව දත්ත (`newdata`) ලබා දුන් විට, `predict()` ශ්‍රිතය මඟින් පරායත්ත විචල්‍යයේ අගයන් මොනවාදැයි අනාවැකි පළ කරයි."
+    },
+    {
+        question: "69. In `summary(lm(y ~ x))`, what does 'R-squared' represent?",
+        options: ["The correlation between x and y.", "The variance in the dependent variable (y) that is predictable from the independent variable (x).", "The p-value of the model.", "The slope of the regression line."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: R-වර්ගය (R-squared) යනු ප්‍රතිශතයක් ලෙස, ස්වාධීන විචල්‍ය(යන්) මඟින් පරායත්ත විචල්‍යයේ කොපමණ විචලතාවක් පැහැදිලි කරන්නේද යන්න මනින මිම්මකි. එය ආකෘතියේ ගැළපීමේ යෝග්‍යතාව (goodness of fit) පෙන්වයි."
+    },
+    {
+        question: "70. What is the main purpose of a paired t-test (`t.test(x, y, paired=TRUE)`)?",
+        options: ["To compare the means of two independent groups.", "To compare the means of the same group at two different times or under two different conditions.", "To compare the variances of two groups.", "To check if two variables are correlated."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: යුගල t-පරීක්ෂාවක් (paired t-test) භාවිතා කරන්නේ එකම විෂයයන් (subjects) මත සිදු කළ මිනුම් දෙකක මධ්‍යන්‍යයන් අතර වෙනසක් තිබේදැයි පරීක්ෂා කිරීමටයි (උදා: ප්‍රතිකාරයකට පෙර සහ පසු ලකුණු)."
+    },
+    {
+        question: "71. What does `nrow()` return?",
+        options: ["The number of columns.", "The number of rows.", "The names of the rows.", "The total number of elements."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `nrow()` ශ්‍රිතය දත්ත රාමුවක, න්‍යාසයක හෝ array එකක ඇති පේළි ගණන ලබා දෙයි."
+    },
+    {
+        question: "72. What is the result of matrix multiplication operator `%*%` for two matrices A and B?",
+        options: ["Element-wise multiplication.", "Standard matrix multiplication.", "Element-wise division.", "An error, this is not a valid operator."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: R වල, `*` මඟින් මූලද්‍රව්‍ය අනුව ගුණ කිරීම (element-wise) සිදු කරන අතර, `%*%` මඟින් සම්මත රේඛීය වීජ ගණිතයේ න්‍යාස ගුණ කිරීම (standard matrix multiplication) සිදු කරයි."
+    },
+    {
+        question: "73. How do you access a list element named `component` inside a list named `my_list`?",
+        options: ["my_list['component']", "my_list['component'][[1]]", "my_list$component", "Both b and c are correct."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: ලැයිස්තුවක නම් කරන ලද මූලද්‍රව්‍යයක් වෙත ළඟා වීමට `$` ක්‍රියාකරු (operator) යනු වඩාත් පොදු සහ පහසුම ක්‍රමයයි. `my_list[['component']]` ද භාවිතා කළ හැක."
+    },
+    {
+        question: "74. The function `round(3.14159, digits = 2)` will return:",
+        options: ["3.14", "3.1", "3", "3.142"],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: `round()` ශ්‍රිතය මඟින් සංඛ්‍යාවක්, `digits` තර්කය මඟින් ලබා දෙන දශමස්ථාන ගණනට වටයයි."
+    },
+    {
+        question: "75. What is the primary difference between `floor(x)` and `round(x)`?",
+        options: ["`floor(x)` always rounds down to the nearest integer, `round(x)` rounds to the nearest integer.", "`floor(x)` is for matrices, `round(x)` is for vectors.", "There is no difference.", "`floor(x)` always rounds up, `round(x)` rounds down."],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: `floor()` මඟින් සැමවිටම දශමස්ථාන ඉවත් කර පහළ පූර්ණ සංඛ්‍යාව ලබා දෙයි (උදා: `floor(5.9)` යනු 5). `round()` මඟින් 0.5 හෝ ඊට වැඩි නම් ඉහළටත්, අඩු නම් පහළටත් වටයයි."
+    },
+    {
+        question: "76. In `hist()`, what does the `breaks` argument control?",
+        options: ["The color of the bars.", "The number of bins (bars) in the histogram.", "The title of the plot.", "The labels on the x-axis."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `breaks` තර්කය මඟින් හිස්ටෝග්‍රෑමයේ ඇති තීරු ගණන (bins) පාලනය කරයි. ඔබට නිශ්චිත සංඛ්‍යාවක් (`breaks=20`) හෝ බිඳුම් ලක්ෂ්‍ය (`breaks=c(0,10,20,30)`) ලබා දිය හැක."
+    },
+    {
+        question: "77. Which function is used to add text inside a plot at specified coordinates?",
+        options: ["`label()`", "`add_text()`", "`text()`", "`write()`"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `text()` ශ්‍රිතය මඟින් `x` සහ `y` ඛණ්ඩාංක ලබා දී, ප්‍රස්තාරයක් මත ඕනෑම තැනක අක්ෂර හෝ ලේබල එක් කිරීමට භාවිතා කරයි."
+    },
+    {
+        question: "78. In the `plot()` function, what does the argument `lty` control?",
+        options: ["Line type (solid, dashed, dotted, etc.).", "Line thickness.", "Label type.", "Legend type."],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: `lty` (line type) තර්කය, `type='l'` වැනි රේඛා ප්‍රස්තාරවලදී, රේඛාවේ ස්වභාවය (ඝන, කඩ ඉරි, තිත් ඉරි ආදී) වෙනස් කිරීමට භාවිතා කරයි."
+    },
+    {
+        question: "79. What is the number of permutations of selecting 3 items from 8 (8P3)?",
+        options: ["choose(8, 3)", "factorial(8) / factorial(3)", "prod(8:6)", "factorial(8-3)"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: R හි තේරීම් (permutations) සඳහා සෘජු ශ්‍රිතයක් නැත. 8P3 යනු 8 * 7 * 6 වේ. මෙය `prod(8:6)` මඟින් ගණනය කළ හැක."
+    },
+    {
+        question: "80. What does the `qpois(p, lambda)` function return?",
+        options: ["The probability P(X <= q).", "The value `x` such that P(X <= x) = p.", "A random number from the Poisson distribution.", "The probability density P(X = x)."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: 'q' উপসর্গය සහිත ශ්‍රිත (quantile functions) මඟින්, දී ඇති සමුච්චිත සම්භාවිතාවකට (`p`) අනුරූප වන විචල්‍යයේ අගය (`x`) ලබා දෙයි."
+    },
+    {
+        question: "81. In a multiple linear regression `lm(y ~ x1 + x2)`, what is the null hypothesis for the coefficient of `x1`?",
+        options: ["That the coefficient of x1 is 1.", "That the variable x1 has no significant effect on y, when x2 is in the model.", "That x1 and x2 are correlated.", "That the model is a good fit."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: බහු රේඛීය ප්‍රතිගාමනයකදී (multiple linear regression), එක් එක් විචල්‍යය සඳහා වන p-අගය පරීක්ෂා කරන්නේ, ආකෘතියේ ඇති අනෙකුත් සියලුම විචල්‍යයන්ගේ බලපෑම ඉවත් කළ විට, එම විචල්‍යයට y කෙරෙහි බලපෑමක් තිබේද යන්නයි."
+    },
+    {
+        question: "82. What does Adjusted R-squared account for that regular R-squared does not?",
+        options: ["Outliers in the data.", "The number of predictors (independent variables) in the model.", "The correlation between predictors.", "The intercept of the model."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: ආකෘතියට නව විචල්‍යයන් එක් කරන විට, R-වර්ගය (R-squared) සැමවිටම වැඩි වේ හෝ එලෙසම පවතී. සකස් කළ R-වර්ගය (Adjusted R-squared) එසේ අනවශ්‍ය ලෙස එක් කරන විචල්‍යයන් සඳහා දඬුවමක් (penalty) ලබා දෙන අතර, ආකෘතියේ සැබෑ පැහැදිලි කිරීමේ හැකියාව වඩාත් හොඳින් මනියි."
+    },
+    {
+        question: "83. What is a key assumption for a valid two-sample t-test?",
+        options: ["The two samples must have the same size.", "The data in each group should be approximately normally distributed.", "The two variables must be positively correlated.", "The median should be equal to the mean in both groups."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: t-පරීක්ෂාවේ ප්‍රධාන උපකල්පන (assumptions) කිහිපයක් ඇත. ඒවා නම්, දත්තවල ස්වාධීනත්වය (independence), සාමාන්‍ය ව්‍යාප්තිය (normality), සහ (සමහර විට) විචලතාවල සමානාත්මතාවය (equality of variances) යි."
+    },
+    {
+        question: "84. The function `cor.test()` provides more information than `cor()`. What additional information does it provide?",
+        options: ["Only the correlation coefficient.", "The covariance.", "The p-value for the significance of the correlation and the confidence interval.", "The R-squared value."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `cor()` මඟින් සහසම්බන්ධතා සංගුණකය පමණක් ලබා දෙයි. `cor.test()` මඟින් ඊට අමතරව, එම සහසම්බන්ධතාව ශුන්‍යයෙන් සංඛ්‍යානමය වශයෙන් වැදගත් ලෙස වෙනස් වේද යන්න පෙන්වන p-අගය සහ විශ්වාස පරතරය (confidence interval) ද ලබා දෙයි."
+    },
+    {
+        question: "85. How can you combine two vectors, `v1 <- c(1,2)` and `v2 <- c(3,4)`, to form a new vector `c(1,2,3,4)`?",
+        options: ["v1 + v2", "c(v1, v2)", "cbind(v1, v2)", "rbind(v1, v2)"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `c()` ශ්‍රිතයට දෛශික කිහිපයක් ලබා දීමෙන්, ඒවා එකට සම්බන්ධ කර නව, දිගු දෛශිකයක් නිර්මාණය කළ හැක."
+    },
+    {
+        question: "86. What is the result of `is.na(c(1, NA, 3))`?",
+        options: ["FALSE TRUE FALSE", "NA", "An error", "FALSE"],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: `is.na()` ශ්‍රිතය දෛශිකයක් මත ක්‍රියාත්මක කළ විට, එය එක් එක් මූලද්‍රව්‍යය `NA` ද නැද්ද යන්න පරීක්ෂා කර, `TRUE`/`FALSE` අගයන් සහිත තාර්කික දෛශිකයක් ලබා දෙයි."
+    },
+    {
+        question: "87. Which function would you use to convert a numeric variable `age` in a data frame to a categorical variable (factor)?",
+        options: ["`factorize(df$age)`", "`as.factor(df$age)`", "`to.factor(df$age)`", "`categorize(df$age)`"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: R හි දත්ත වර්ග පරිවර්තනය කිරීමට `as.*()` ශ්‍රිත කාණ්ඩය භාවිතා කරයි. සංඛ්‍යාත්මක විචල්‍යයක් වර්ගීකරණ (categorical) විචල්‍යයක් බවට පත් කිරීමට `as.factor()` යොදා ගනී."
+    },
+    {
+        question: "88. What is the most common measure of dispersion returned by `summary()`?",
+        options: ["Standard Deviation", "Variance", "The range between the 1st and 3rd quartiles (IQR)", "Range (Min/Max)"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: `summary()` ශ්‍රිතය මඟින් සම්මත අපගමනය හෝ විචලතාව කෙලින්ම නොපෙන්වයි. නමුත් එය 1වන සහ 3වන චතුර්ථක පෙන්වන නිසා, එමගින් චතුර්ථක අපගමන පරාසය (IQR) ව්‍යුත්පන්න කළ හැක. මෙය දත්තවල විසිරුම පෙන්වන ප්‍රධාන මිම්මකි."
+    },
+    {
+        question: "89. In a boxplot, a point plotted far above or below the whiskers is considered an:",
+        options: ["Mean value", "Median value", "Error", "Outlier"],
+        correct: 3,
+        explanation: "පැහැදිලි කිරීම: පෙට්ටි සටහනක 'whiskers' වලින් පිටත, එනම් IQR අගය මෙන් 1.5 ගුණයකට වඩා දුරින් පිහිටි දත්ත ලක්ෂ්‍යයන් බාහිර අගයන් (outliers) ලෙස සලකනු ලැබේ."
+    },
+    {
+        question: "90. How can you save the current R plot to a PDF file named 'myplot.pdf'?",
+        options: ["`save.plot('myplot.pdf')`", "`pdf('myplot.pdf'); plot(...); dev.off()`", "`export.pdf('myplot.pdf')`", "`write.plot(pdf, 'myplot.pdf')`"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: R හි ප්‍රස්තාර ගොනුවකට save කිරීමේ සම්මත ක්‍රමය මෙයයි. පළමුව `pdf()` (හෝ `png()`, `jpeg()` වැනි) ශ්‍රිතය මඟින් ග්‍රැෆික් උපාංගය (graphics device) විවෘත කරයි, ඉන්පසු ප්‍රස්තාරය අඳියි, අවසානයේ `dev.off()` මඟින් උපාංගය වසා ගොනුව save කරයි."
+    },
+    {
+        question: "91. `pnorm(0)` returns what value?",
+        options: ["0", "1", "0.5", "Inf"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: සම්මත සාමාන්‍ය ව්‍යාප්තිය (standard normal distribution) සමමිතික වන අතර, එහි මධ්‍යන්‍යය 0 වේ. එබැවින්, වක්‍රය යට ඇති මුළු වර්ගඵලයෙන් අඩක් (0.5) 0 ට වඩා අඩු වන අතර, අඩක් 0 ට වඩා වැඩි වේ. `pnorm(0)` මඟින් P(Z ≤ 0) ගණනය කරයි."
+    },
+    {
+        question: "92. If `pbinom(q, size, prob)` calculates P(X ≤ q), how do you calculate P(X = q) using only pbinom?",
+        options: ["This is not possible.", "`pbinom(q,...) - pbinom(q-1,...)`", "`pbinom(q,...) / q`", "`dbinom(q,...)` is the only way"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: P(X ≤ q) යනු P(X=0)+...+P(X=q-1)+P(X=q) වේ. P(X ≤ q-1) යනු P(X=0)+...+P(X=q-1) වේ. මේ දෙකේ වෙනස P(X=q) වේ. `dbinom` වඩා පහසු වුවත්, සංකල්පීයව මෙය නිවැරදිය."
+    },
+    {
+        question: "93. What does a 'residual' represent in linear regression?",
+        options: ["The difference between the observed y value and the predicted y value (ŷ).", "The slope of the regression line.", "The R-squared value.", "The error in the x variable."],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: අවශේෂ (residual) යනු නිරීක්ෂණය කරන ලද සැබෑ අගය සහ ආකෘතිය මඟින් අනාවැකි පළ කළ අගය අතර ඇති සිරස් දුරයි. එය ආකෘතියේ දෝෂය (error) මනියි."
+    },
+    {
+        question: "94. What is the purpose of the `conf.level` argument in `t.test()`?",
+        options: ["To set the p-value for significance.", "To set the confidence level for the confidence interval of the mean.", "To set the number of confidence intervals to compute.", "To configure the plot level."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `conf.level` තර්කය මඟින් මධ්‍යන්‍යයේ වෙනස සඳහා ගණනය කරන විශ්වාස පරතරයේ මට්ටම නියම කරයි. default අගය 0.95 (95% confidence) වේ."
+    },
+    {
+        question: "95. Which function is used to create a sequence of numbers? For example, to create `1, 3, 5, 7, 9`.",
+        options: ["`c(1,3,5,7,9)`", "`seq(from = 1, to = 9, by = 2)`", "`1:9, by=2`", "Both a and b"],
+        correct: 3,
+        explanation: "පැහැදිලි කිරීම: `c()` මඟින් අගයන් සෘජුවම ලබා දී දෛශිකයක් සෑදිය හැක. `seq()` ශ්‍රිතය මඟින් ආරම්භක අගයක්, අවසාන අගයක්, සහ වර්ධකයක් (`by`) ලබා දී අනුක්‍රමයක් නිර්මාණය කළ හැක. දෙකම වලංගු ක්‍රම වේ."
+    },
+    {
+        question: "96. If `x <- c('a','b','c')` what is `x[c(1,3)]`?",
+        options: ["'a', 'c'", "'a', 'b', 'c'", "'b'", "An error"],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: දෛශිකයක් සුචිගත කිරීමේදී (indexing) තවත් දෛශිකයක් භාවිතා කළ හැක. මෙහිදී, `x` හි පළමු සහ තුන්වන මූලද්‍රව්‍ය තෝරාගෙන නව දෛශිකයක් ලෙස ලබා දෙයි."
+    },
+    {
+        question: "97. What is the main difference between `cbind()` and `rbind()`?",
+        options: ["`cbind` is for characters, `rbind` is for numbers.", "`cbind` combines vectors as columns, `rbind` combines them as rows.", "`cbind` is faster than `rbind`.", "There is no difference."],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `cbind` (column bind) මඟින් දෛශික තීරු ලෙස එකට සම්බන්ධ කර න්‍යාසයක් හෝ දත්ත රාමුවක් සාදයි. `rbind` (row bind) මඟින් ඒවා පේළි ලෙස සම්බන්ධ කරයි."
+    },
+    {
+        question: "98. In a pie chart, if a category represents 25% of the total, what angle will its slice occupy?",
+        options: ["25 degrees", "45 degrees", "90 degrees", "180 degrees"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: සම්පූර්ණ පයි සටහන අංශක 360 කි. එබැවින්, 25% ක් නියෝජනය කරන කොටස අංශක 360 * 0.25 = 90 ක් වේ."
+    },
+    {
+        question: "99. What does the `abline(h=0)` command do on a plot?",
+        options: ["Adds a horizontal line at y=0.", "Adds a vertical line at x=0.", "Adds a best-fit regression line.", "Highlights the point (0,0)."],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: `abline()` ශ්‍රිතයට `h` තර්කය ලබා දුන් විට, එය එම y අගය හරහා යන තිරස් (horizontal) රේඛාවක් අඳියි. `v` තර්කය මඟින් සිරස් (vertical) රේඛාවක් අඳියි."
+    },
+    {
+        question: "100. If `rnorm(1)` generates one number from a standard normal distribution, what would you expect the `mean` of `rnorm(1000000)` to be very close to?",
+        options: ["1", "0.5", "0", "It's completely random and unpredictable."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: සම්මත සාමාන්‍ය ව්‍යාප්තියක (standard normal distribution) මධ්‍යන්‍යය 0 වේ. විශාල සංඛ්‍යා නියමය (Law of Large Numbers) අනුව, ඔබ එම ව්‍යාප්තියෙන් ඉතා විශාල නියැදියක් ලබා ගත් විට, එම නියැදියේ මධ්‍යන්‍යය, ගහනයේ සැබෑ මධ්‍යන්‍යය වන 0 ට ඉතා ආසන්න විය යුතුය."
+    },
+    {
+        question: "101. What is the most likely reason for a `t.test()` to return a p-value of 1?",
+        options: ["The two groups are perfectly identical.", "The groups are extremely different.", "The data contains `NA` values.", "The sample size is too large."],
+        correct: 0,
+        explanation: "පැහැදිලි කිරීම: p-අගය 1ක් ලැබීමෙන් ඇඟවෙන්නේ නියැදි මධ්‍යන්‍යයන් අතර වෙනසක් නොමැති බවත්, දත්තවල කිසිදු විචලනයක් නොමැති බවත් ය. මෙය සිදුවිය හැක්කේ නියැදි දෙකම සෑම අතින්ම සමාන වන විටයි."
+    },
+    {
+        question: "102. What happens if you try to add a character string to a numeric vector in R?",
+        options: ["It returns an error.", "The string is ignored.", "All elements in the vector are converted to character strings.", "The string is converted to a number (NA if not possible)."],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: R දෛශිකවලට තිබිය හැක්කේ එකම දත්ත වර්ගයක් පමණි. එබැවින්, ඔබ සංඛ්‍යාත්මක දෛශිකයකට අක්ෂරයක් එක් කළහොත්, R විසින් සියලුම සංඛ්‍යා ද අක්ෂර බවට පරිවර්තනය (coercion) කරයි."
+    },
+    {
+        question: "103. Which of these functions is NOT part of the base R installation and requires a package?",
+        options: ["`mean()`", "`ggplot()`", "`plot()`", "`sd()`"],
+        correct: 1,
+        explanation: "පැහැදිලි කිරීම: `ggplot()` යනු ඉතා ප්‍රබල සහ ජනප්‍රිය දත්ත දෘශ්‍යකරණ ශ්‍රිතයකි, නමුත් එය `ggplot2` නම් පැකේජයේ කොටසකි. එය භාවිතා කිරීමට පෙර `install.packages(\"ggplot2\")` සහ `library(ggplot2)` ලෙස එය ස්ථාපනය කර සක්‍රීය කළ යුතුය."
+    },
+    {
+        question: "104. In a standard normal distribution, what is the approximate probability P(-1 < Z < 1)?",
+        options: ["99%", "95%", "68%", "50%"],
+        correct: 2,
+        explanation: "පැහැදිලි කිරීම: ආනුභවික රීතියට (Empirical Rule) අනුව, සාමාන්‍ය ව්‍යාප්තියකදී දත්තවලින් ආසන්න වශයෙන් 68% ක් මධ්‍යන්‍යයේ සිට එක් සම්මත අපගමනයක් තුළ ද, 95% ක් සම්මත අපගමන දෙකක් තුළ ද, 99.7% ක් සම්මත අපගමන තුනක් තුළ ද පිහිටයි."
+    }
+];
+
+// ------------- QUIZ LOGIC -------------
+
+const questionTextEl = document.getElementById('question-text');
+const optionsListEl = document.getElementById('options-list');
+const feedbackEl = document.getElementById('feedback');
+const explanationTextEl = document.getElementById('explanation-text');
+const nextBtn = document.getElementById('next-btn');
+const backBtn = document.getElementById('back-btn');
+const progressTextEl = document.getElementById('progress-text');
+const quizContainer = document.getElementById('quiz-container');
+const timerEl = document.getElementById('timer');
+
+// You can change the quiz time here (in minutes)
+const quizTimeInMinutes = 60;
+let timeRemaining = quizTimeInMinutes * 60;
+let timerInterval;
+
+let currentQuestionIndex = 0;
+let userAnswers = new Array(quizData.length).fill(null);
+
+function startTimer() {
+    timerInterval = setInterval(updateTimer, 1000);
+}
+
+function updateTimer() {
+    timeRemaining--;
+    const minutes = Math.floor(timeRemaining / 60);
+    let seconds = timeRemaining % 60;
+
+    seconds = seconds < 10 ? '0' + seconds : seconds;
+    const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+
+    timerEl.innerText = `${minutesStr}:${seconds}`;
+
+    if (timeRemaining <= 0) {
+        clearInterval(timerInterval);
+        showResults(true); // true indicates time is up
+    }
+}
+
+function loadQuestion() {
+    const currentQuestion = quizData[currentQuestionIndex];
+    questionTextEl.innerText = currentQuestion.question;
+    optionsListEl.innerHTML = '';
+    feedbackEl.classList.remove('show');
+    
+    backBtn.disabled = currentQuestionIndex === 0;
+    nextBtn.disabled = userAnswers[currentQuestionIndex] === null;
+
+    if (currentQuestionIndex === quizData.length - 1) {
+        nextBtn.innerText = 'Show Results';
+    } else {
+        nextBtn.innerText = 'Next';
+    }
+
+    currentQuestion.options.forEach((option, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = option;
+        li.classList.add('option');
+        li.dataset.index = index;
+        
+        if (userAnswers[currentQuestionIndex] === null) {
+            li.addEventListener('click', selectAnswer);
+        } else {
+            li.classList.add('no-hover');
+            const correctAnswerIndex = currentQuestion.correct;
+            const storedAnswerIndex = userAnswers[currentQuestionIndex];
+
+            if (index === correctAnswerIndex) {
+                li.classList.add('correct');
+            }
+            if (index === storedAnswerIndex && storedAnswerIndex !== correctAnswerIndex) {
+                li.classList.add('incorrect');
+            }
+        }
+        optionsListEl.appendChild(li);
+    });
+
+    if (userAnswers[currentQuestionIndex] !== null) {
+        showFeedback();
+    }
+    
+    progressTextEl.innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+}
+
+function selectAnswer(e) {
+    if (userAnswers[currentQuestionIndex] !== null) return; 
+
+    const selectedOption = e.target;
+    const selectedAnswerIndex = parseInt(selectedOption.dataset.index);
+    userAnswers[currentQuestionIndex] = selectedAnswerIndex;
+
+    const currentQuestion = quizData[currentQuestionIndex];
+    const correctAnswerIndex = currentQuestion.correct;
+
+    if (selectedAnswerIndex === correctAnswerIndex) {
+        selectedOption.classList.add('correct');
+    } else {
+        selectedOption.classList.add('incorrect');
+        optionsListEl.children[correctAnswerIndex].classList.add('correct');
+    }
+    
+    Array.from(optionsListEl.children).forEach(child => {
+        child.removeEventListener('click', selectAnswer);
+        child.classList.add('no-hover');
+    });
+
+    showFeedback();
+    nextBtn.disabled = false;
+}
+
+function showFeedback() {
+    const currentQuestion = quizData[currentQuestionIndex];
+    explanationTextEl.innerHTML = `<b>Correct Answer: ${currentQuestion.options[currentQuestion.correct]}</b><br>${currentQuestion.explanation}`;
+    feedbackEl.classList.add('show');
+}
+
+function showResults(timeIsUp = false) {
+    clearInterval(timerInterval); // Stop timer if quiz is finished
+    
+    let finalScore = 0;
+    for (let i = 0; i < quizData.length; i++) {
+        if (userAnswers[i] === quizData[i].correct) {
+            finalScore++;
+        }
+    }
+
+    let resultMessage = timeIsUp ? `<h2>Time's Up!</h2>` : `<h2>Quiz Completed!</h2>`;
+
+    quizContainer.innerHTML = `
+        <div id="header">
+            ${resultMessage}
+        </div>
+        <div id="question-area" style="text-align: center;">
+            <p style="font-size: 1.5em; margin: 20px;">Your final score is</p>
+            <p style="font-size: 3em; font-weight: bold; color: #4A90E2;">${finalScore} out of ${quizData.length}</p>
+            <button id="restart-btn" style="background-color: #4A90E2; color: white; border: none; padding: 15px 30px; border-radius: 5px; cursor: pointer; font-size: 1.2em; margin-top: 20px;">Restart Quiz</button>
+        </div>
+    `;
+    document.getElementById('restart-btn').addEventListener('click', () => {
+        location.reload();
+    });
+}
+
+nextBtn.addEventListener('click', () => {
+    if (currentQuestionIndex < quizData.length - 1) {
+        currentQuestionIndex++;
+        loadQuestion();
+    } else {
+        showResults();
+    }
+});
+
+backBtn.addEventListener('click', () => {
+    if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        loadQuestion();
+    }
+});
+
+// Initial load
+loadQuestion();
+startTimer();
+
+</script>
+</body>
+</html>
